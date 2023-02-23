@@ -1,0 +1,377 @@
+//=====================================================================
+//CPSC-323-01 (10289) Compilers and Languages
+//Assignment:     Project 1
+//Program Name:   Prog2
+//Term:           Summer 2022
+//=====================================================================
+
+
+#include <iostream>
+#include <string>
+#include<fstream>
+#include<sstream>
+using namespace std;
+
+// this program allows the user to enter a file path, open the text
+// file at the indicated location and format the text in the file line 
+// by line, removing comments after "//" comment indicators, removing  
+// extra spaces, and placing a space before and after each token - it
+// will then output the formatted text to a new text file at a location 
+// given by the user
+
+// function declarations
+int getUserChoice();
+string getInputFilepath();
+string getOutputFilepath();
+void fileProcessor();
+string spaceRemover(string inputString);
+string stringFormatter(string userString);
+bool isInt(char testChar);
+bool isLetter(char testChar);
+bool isStandalone(char testChar);
+
+
+//main function
+int main()
+{
+	string userString = "";
+	bool continueLoop = true;
+
+	while (continueLoop)
+	{
+		switch (getUserChoice())
+		{
+		case 1:
+			fileProcessor();
+			cout << "Processing completed." << endl << endl;
+			system("pause");
+			cin.ignore(1);
+			break;
+		case 2:
+			continueLoop = false;
+			break;
+		default:
+			system("cls");
+			cout << "You've made an invalid selection.  Please try again." << endl << endl << endl;
+			system("pause");
+			break;
+		}
+	}
+
+
+	return 0;
+}
+
+
+// function definitions
+int getUserChoice()
+{
+	int userChoice = 0;
+	string userInput = "";
+
+	system("cls");
+	cout << "Project 1: Prog2 - Text Formatter" << endl << endl << endl << endl;
+	cout << "\tPlease make a selection:" << endl << endl;
+	cout << "\t1. Enter a File Path" << endl;
+	cout << "\t2. Exit Program" << endl << endl;
+	cout << "\tYour Selection:      ";
+
+	getline(cin, userInput);
+
+	if ((userInput != "1") && (userInput != "2"))
+		return 0;
+	else
+	{
+		userChoice = stoi(userInput);
+		return userChoice;
+	}
+}
+
+string spaceRemover(string inputString)
+{
+	string outputString = "";
+	int sizeOfString = 0;
+
+	sizeOfString = inputString.length();
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		if ((inputString[i] != ' ') && (inputString[i] != '\n'))
+			outputString.push_back(inputString[i]);
+	}
+
+	return outputString;
+}
+
+string stringFormatter(string userString)
+{
+	string wordBufferString = "";
+	string outputString = "";
+	int charCounter = 0;
+	bool notDroid = true;
+	int outputStringLength = 0;
+
+	system("cls");
+
+	while (!userString.empty())
+	{
+		wordBufferString += userString[0];
+		userString.erase(0, 1);
+
+		if (isStandalone(wordBufferString[0]))
+		{
+			outputString += wordBufferString;
+
+			if (wordBufferString[0] == ';')
+				outputString += " \n";
+
+		}
+		else if (wordBufferString[0] == '/')
+		{
+			if (userString[0] == '/')
+				break;
+			else
+				outputString += wordBufferString;
+		}
+		else if (wordBufferString[0] == '+')
+		{
+			if (userString[0] == '+')
+			{
+				wordBufferString += userString[0];
+				userString.erase(0, 1);
+				outputString += wordBufferString;
+			}
+			else
+				outputString += wordBufferString;
+		}
+		else if (wordBufferString[0] == '-')
+		{
+			if (!isInt(userString[0]) && (userString[0] != '-'))
+				outputString += wordBufferString;
+			else if ((userString[0] == '-') && isInt(userString[1]))
+				outputString += wordBufferString;
+			else if ((userString[0] == '-') && !isInt(userString[1]))
+			{
+				wordBufferString += userString[0];
+				userString.erase(0, 1);
+				outputString += wordBufferString;
+			}
+			else
+			{
+				charCounter = 1;
+
+				while (notDroid)
+				{
+					if (isInt(userString[charCounter]))
+					{
+						charCounter++;
+						notDroid = true;
+					}
+					else
+						notDroid = false;
+				}
+
+				notDroid = true;
+
+				for (int i = 0; i < charCounter; i++)
+				{
+					wordBufferString += userString[0];
+					userString.erase(0, 1);
+				}
+
+				outputString += wordBufferString;
+				charCounter = 0;
+			}
+		}
+		else if (isInt(wordBufferString[0]))
+		{
+			if (isInt(userString[0]))
+			{
+				charCounter = 1;
+
+				while (notDroid)
+				{
+					if (isInt(userString[charCounter]))
+					{
+						charCounter++;
+						notDroid = true;
+					}
+					else
+						notDroid = false;
+				}
+
+				notDroid = true;
+
+				for (int i = 0; i < charCounter; i++)
+				{
+					wordBufferString += userString[0];
+					userString.erase(0, 1);
+				}
+
+				outputString += wordBufferString;
+				charCounter = 0;
+			}
+			else
+				outputString += wordBufferString;
+		}
+		else if ((wordBufferString[0] == 'i') && (userString[0] == 'n') && (userString[1] == 't'))
+		{
+			wordBufferString += userString[0];
+			userString.erase(0, 1);
+			wordBufferString += userString[0];
+			userString.erase(0, 1);
+			outputString += wordBufferString;
+		}
+		else if (isLetter(wordBufferString[0]) || (wordBufferString[0] == '_'))
+		{
+			if (isLetter(userString[0]) || (isInt(userString[0]) || (userString[0] == '_')))
+			{
+				charCounter = 1;
+
+				while (notDroid)
+				{
+					if (isLetter(userString[charCounter]) || (isInt(userString[charCounter]) || (userString[charCounter] == '_')))
+					{
+						charCounter++;
+						notDroid = true;
+					}
+					else
+						notDroid = false;
+				}
+
+				notDroid = true;
+
+				for (int i = 0; i < charCounter; i++)
+				{
+					wordBufferString += userString[0];
+					userString.erase(0, 1);
+				}
+
+				if ((wordBufferString == "cout") && (userString[0] == '<') && (userString[1] == '<'))
+				{
+					wordBufferString += userString[0];
+					userString.erase(0, 1);
+					wordBufferString += userString[0];
+					userString.erase(0, 1);
+				}
+
+				outputString += wordBufferString;
+				charCounter = 0;
+			}
+			else
+				outputString += wordBufferString;
+		}
+		else if ((wordBufferString[0] == '<') || (wordBufferString[0] == '>') || (wordBufferString[0] == '!') || (wordBufferString[0] == '='))
+		{
+			if (userString[0] == '=')
+			{
+				wordBufferString += userString[0];
+				userString.erase(0, 1);
+				outputString += wordBufferString;
+			}
+			else
+				outputString += wordBufferString;
+		}
+
+		outputStringLength = outputString.length();
+
+		if (!(outputString.empty()) && !(outputString[(outputStringLength - 1)] == '\n'))
+			outputString += ' ';
+
+		wordBufferString = "";
+	}
+
+
+	return outputString;
+}
+
+bool isInt(char testChar)
+{
+	if ((testChar >= 48) && (testChar <= 57))
+		return true;
+	else
+		return false;
+}
+
+bool isLetter(char testChar)
+{
+	if ((testChar >= 97) && (testChar <= 122))
+		return true;
+	else if ((testChar >= 65) && (testChar <= 90))
+		return true;
+	else
+		return false;
+}
+
+bool isStandalone(char testChar)
+{
+	char standaloneChars[6] = { '*', '=', ';', '(', ')', ',' };
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (testChar == standaloneChars[i])
+			return true;
+	}
+
+	return false;
+
+}
+
+string getInputFilepath()
+{
+	string filePath = "";
+
+	cout << "Please provide the file path for the input text file:  ";
+
+	cin >> filePath;
+
+	return filePath;
+}
+
+string getOutputFilepath()
+{
+	string filePath = "";
+
+	cout << "Please provide the file path for the output text file:  ";
+
+	cin >> filePath;
+
+	return filePath;
+}
+
+void fileProcessor()
+{
+	string buffer = "";
+	string formattedBuffer = "";
+	string outputString = "";
+
+	string inputFilePath = "";
+	string outputFilePath = "";
+
+	system("cls");
+
+	inputFilePath = getInputFilepath();
+	outputFilePath = getOutputFilepath();
+
+	ifstream inputFile;
+	ofstream outputFile;
+
+	inputFile.open(inputFilePath, ios::in);
+	outputFile.open(outputFilePath, ios::out);
+
+	if (inputFile.is_open())
+	{
+		while (getline(inputFile, buffer))
+		{
+			formattedBuffer = spaceRemover(buffer);
+			outputString = stringFormatter(formattedBuffer);
+
+			if ((outputFile.is_open()) && (outputString != ""))
+			{
+				outputFile << outputString;
+			}
+		}
+	}
+	inputFile.close();
+	outputFile.close();
+}
