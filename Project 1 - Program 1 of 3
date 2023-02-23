@@ -1,0 +1,118 @@
+//=====================================================================
+//CPSC-323-01 (10289) Compilers and Languages
+//Assignment:     Project 1
+//Program Name:   Prog1
+//Term:           Summer 2022
+//=====================================================================
+
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+//this program will allow the user to enter a string of characters, ending with $
+//it will then accept or reject the string based on whether the string is in the 
+//following language: L = (a*|b)ab*a
+
+
+//function declarations
+string getUserString();
+bool checkTable();
+
+//main function
+int main()
+{
+	if (checkTable())
+	{
+		cout << "YES" << endl << endl;
+	}
+	else
+	{
+		cout << "NO" << endl << endl;
+	}
+
+	system("pause");
+
+	return 0;
+}
+
+
+//function definitions
+string getUserString()
+{
+	string userString = "";
+	bool inputNotValid = true;
+
+	int sizeOfString = 0;
+	int lastCharAdd = 0;
+
+	do
+	{
+		cout << "Please enter a string to be checked against the language L = (a*|b)ab*a. " << endl;
+		cout << "Please make sure your string ends with a dollar sign ($)." << endl << endl;
+		cout << "Your String:  ";
+		cin >> userString;
+
+		sizeOfString = userString.length();
+		lastCharAdd = (sizeOfString - 1);
+
+		for (int j = 0; j < (sizeOfString - 1); j++)
+		{
+			if (userString[j] != 'a' && userString[j] != 'b')
+				inputNotValid = true;
+			else if (userString[lastCharAdd] != '$')
+			{
+				inputNotValid = true;
+			}
+			else
+			{
+				inputNotValid = false;
+			}
+		}
+
+		if (inputNotValid)
+		{
+			cout << endl << endl;
+			cout << "The last character of the string must be a dollar sign ($)." << endl;
+			cout << "Additionally, the string must be made up of instances of a and b only." << endl;
+			cout << "Please try again." << endl << endl;
+		}
+
+	} while (inputNotValid);
+
+	return userString;
+}
+
+bool checkTable()
+{
+	int langTable[8][2] = { {1,2}, {3,4}, {6,0}, {3,4}, {5,6}, {7,6}, {7,6}, {0,0} };
+	int i = 0;
+	int state = 0;
+	int row, col = 0;
+	int acceptedStates[3] = { 3,5,7 };
+	bool stringAccepted = false;
+
+	string userString = getUserString();
+
+	while (userString[i] != '$')
+	{
+		if (userString[i] == 'a')
+			col = 0;
+		else
+			col = 1;
+
+		row = state;
+
+		state = langTable[row][col];
+
+		i++;
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (state == acceptedStates[i])
+			stringAccepted = true;
+	}
+
+	return stringAccepted;
+}
