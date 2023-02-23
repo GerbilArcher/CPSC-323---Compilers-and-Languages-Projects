@@ -1,0 +1,477 @@
+//=====================================================================
+//CPSC-323-01 (10289) Compilers and Languages
+//Assignment:     Project 3
+//Program Name:   Prog2
+//Term:           Summer 2022
+//=====================================================================
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+// this program allows the user to enter a string of characters, ending with $
+// it will then accept or reject the string based on whether the string is in the 
+// language outlined by the LR parsing table provided for this program in Project 3
+
+
+// function declarations
+int getUserChoice();
+string getUserString();
+string spaceRemover(string inputString);
+bool checkUserString(string userString);
+string checkTable(int rowInt, char col);
+string checkRule(int ruleNumber);
+bool isInt(char testChar);
+bool isTwoDigits(char testChar);
+bool bottomUpParser(string userString);
+
+//main function
+int main()
+{
+	string userString = "";
+	bool continueLoop = true;
+
+	while (continueLoop)
+	{
+		switch (getUserChoice())
+		{
+		case 1:
+			userString = getUserString();
+
+			cout << endl << "After validation and space removal, your string is:  " << userString << endl << endl;
+
+			if (bottomUpParser(userString))
+				cout << endl << "The string " << userString << " is valid." << endl << endl;
+			else
+				cout << endl << "The string " << userString << " is not valid." << endl << endl;
+
+			system("pause");
+			break;
+		case 2:
+			continueLoop = false;
+			break;
+		default:
+			system("cls");
+			cout << "You've made an invalid selection.  Please try again." << endl << endl << endl;
+			system("pause");
+			break;
+		}
+	}
+
+	return 0;
+}
+
+// function definitions
+int getUserChoice()
+{
+	int userChoice =  0;
+	string userInput = "";
+
+	system("cls");
+	cout << "Project 3: Prog2 - Bottom-Up Parser Using LR Parsing Table" << endl << endl << endl << endl;
+	cout << "\tPlease make a selection:" << endl << endl;
+	cout << "\t1. Enter a String to be Parsed" << endl;
+	cout << "\t2. Exit Program" << endl << endl;
+	cout << "\tYour Selection:      ";
+
+	getline(cin, userInput);
+
+	if ((userInput != "1") && (userInput != "2"))
+		return 0;
+	else
+	{
+		userChoice = stoi(userInput);
+		return userChoice;
+	}
+}
+
+string getUserString()
+{
+	string userString = "";
+	bool inputNotValid = true;
+
+	int sizeOfString = 0;
+	int lastCharAddress = 0;
+
+	do
+	{
+		system("cls");
+		cout << "Please enter a string to be checked. " << endl;
+		cout << "The only valid characters are i, +, -, *, /, (, ), and $." << endl;
+		cout << "Spaces are OK to enter - they will be disregarded." << endl;
+		cout << "Please make sure your string ends with a dollar sign ($)." << endl << endl;
+		cout << "Your String:  ";
+		getline(cin, userString);
+
+		userString = spaceRemover(userString);
+
+		inputNotValid = !(checkUserString(userString));
+
+		if (inputNotValid)
+		{
+			cout << endl << endl;
+			cout << "The last character of the string must be a dollar sign ($)." << endl;
+			cout << "Additionally, the string must be made up of only valid characters." << endl;
+			cout << "Please try again." << endl << endl;
+			system("pause");
+		}
+
+	} while (inputNotValid);
+
+	return userString;
+}
+string spaceRemover(string inputString)
+{
+	string outputString = "";
+	int sizeOfString = 0;
+
+	sizeOfString = inputString.length();
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		if (inputString[i] != ' ')
+			outputString.push_back(inputString[i]);
+	}
+
+	return outputString;
+}
+
+bool checkUserString(string userString)
+{
+	const int validCharsQuantity = 8;
+	char validCharacters[validCharsQuantity] = { 'i', '+', '-', '*', '/', '(', ')', '$' };
+	int sizeOfString = 0;
+	bool charIsValid = false;
+	int lastCharAddress = 0;
+
+	sizeOfString = userString.length();
+	lastCharAddress = (sizeOfString - 1);
+
+	if (userString[lastCharAddress] != '$')
+		return false;
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		charIsValid = false;
+
+		for (int j = 0; j < validCharsQuantity; j++)
+		{
+			if (userString[i] == validCharacters[j])
+			{
+				charIsValid = true;
+				break;
+			}
+		}
+
+		if (charIsValid == false)
+			return false;
+	}
+
+	return true;
+}
+
+string checkTable(int rowInt, char col)
+{
+	const int rowQty = 16;
+	const int colQty = 11;
+
+	int columnInt = 0;
+
+	string outputString = "";
+
+	string parseTable[rowQty][colQty] = { { "S5", "", "", "", "", "S4", "", "", "1", "2", "3" },
+										  { "", "S6", "S7", "", "", "", "", "A", "", "", "" },
+										  { "", "R3", "R3", "S8", "S9", "", "R3", "R3", "", "", "" },
+										  { "", "R6", "R6", "R6", "R6", "", "R6", "R6", "", "", "" },
+										  { "S5", "", "", "", "", "S4", "", "", "10", "2", "3" },
+										  { "", "R8", "R8", "R8", "R8", "", "R8", "R8", "", "", "" },
+										  { "S5", "", "", "", "", "S4", "", "", "", "11", "3" },
+										  { "S5", "", "", "", "", "S4", "", "", "", "12", "3" },
+										  { "S5", "", "", "", "", "S4", "", "", "", "", "13" },
+										  { "S5", "", "", "", "", "S4", "", "", "", "", "14" },
+										  { "", "S6", "S7", "", "", "", "S15", "", "", "", "" },
+										  { "", "R1", "R1", "S8", "S9", "", "R1", "R1", "", "", "" },
+										  { "", "R2", "R2", "S8", "S9", "", "R2", "R2", "", "", "" },
+										  { "", "R4", "R4", "R4", "R4", "", "R4", "R4", "", "", "" },
+										  { "", "R5", "R5", "R5", "R5", "", "R5", "R5", "", "", "" },
+										  { "", "R7", "R7", "R7", "R7", "", "R7", "R7", "", "", "" } };
+
+	switch (col)
+	{
+	case 'i':
+		columnInt = 0;
+		break;
+
+	case '+':
+		columnInt = 1;
+		break;
+
+	case '-':
+		columnInt = 2;
+		break;
+
+	case '*':
+		columnInt = 3;
+		break;
+
+	case '/':
+		columnInt = 4;
+		break;
+
+	case '(':
+		columnInt = 5;
+		break;
+
+	case ')':
+		columnInt = 6;
+		break;
+
+	case '$':
+		columnInt = 7;
+		break;
+
+	case 'E':
+		columnInt = 8;
+		break;
+
+	case 'T':
+		columnInt = 9;
+		break;
+
+	case 'F':
+		columnInt = 10;
+		break;
+	}
+
+	outputString = parseTable[rowInt][columnInt];
+
+	return outputString;
+}
+
+string checkRule(int ruleNumber)
+{
+	const int ruleQty = 8;
+	string ruleList[ruleQty] = { "E->E+T", "E->E-T", "E->T", "T->T*F", "T->T/F", "T->F", "F->(E)", "F->i" };
+	string outputString = "";
+
+	ruleNumber--;
+
+	outputString = ruleList[ruleNumber];
+
+	return outputString;
+}
+
+bool isInt(char testChar)
+{
+	if ((testChar >= 48) && (testChar <= 57))
+		return true;
+	else
+		return false;
+}
+
+bool isTwoDigits(char testChar)
+{
+	if (isInt(testChar))
+		return true;
+	else
+		return false;
+}
+
+bool bottomUpParser(string userString)
+{
+	const int sizeOfStack = 50;
+	const char startingState = '0';
+
+	char charStack[sizeOfStack] = {};
+	int stackPointer = 0;
+
+	string TOS = "";
+	int topOfStack = 0;
+
+	string currentRule = "";
+	int currentRuleLength = 0;
+
+	int reduceRuleNumber = 0;
+	string reduceRule = "";
+	int reduceRuleLength = 0;
+
+	char LHS = '\0';
+	string RHS = "";
+	int RHSLength = 0;
+
+	string newState = "";
+	int newStateInt = 0;
+	int newStateLength = 0;
+
+	charStack[stackPointer] = '$';
+	stackPointer++;
+
+	charStack[stackPointer] = startingState;
+	stackPointer++;
+
+	int loopCount = 0;
+
+	while ((stackPointer > 0) && (loopCount <= 500))
+	{
+		loopCount++;
+
+		if (loopCount == 500)
+		{
+			cout << "Something went wrong." << endl << endl;
+			return false;
+		}
+
+		if (isTwoDigits(charStack[(stackPointer - 2)]))
+		{
+			TOS+=(charStack[stackPointer - 2]);
+			TOS+=(charStack[stackPointer - 1]);
+			topOfStack = stoi(TOS);
+			TOS = "";
+		}
+		else
+		{
+			TOS+=(charStack[stackPointer - 1]);
+			topOfStack = stoi(TOS);
+			TOS = "";
+		}
+
+		currentRule = checkTable(topOfStack, userString[0]);
+
+		if (currentRule == "")
+			return false;
+		else if (currentRule[0] == 'A')
+		{
+			cout << "The parser has accepted the string with stack content:\t\t";
+			for (int a = 0; a < stackPointer; a++)
+				cout << charStack[a];
+			cout << endl;
+
+			return true;
+		}
+		else if (currentRule[0] == 'S')
+		{
+			charStack[stackPointer] = userString[0];
+			stackPointer++;
+			userString.erase(0, 1);
+
+			currentRule.erase(0, 1);
+			currentRuleLength = currentRule.length();
+
+			if (currentRuleLength > 1)
+			{
+				charStack[stackPointer] = currentRule[0];
+				stackPointer++;
+				charStack[stackPointer] = currentRule[1];
+				stackPointer++;
+			}
+			else if (currentRuleLength == 1)
+			{
+				charStack[stackPointer] = currentRule[0];
+				stackPointer++;
+			}
+			else
+			{
+				return false;
+			}
+
+			currentRule = "";
+
+			cout << "The parser has performed a shift with new stack content:\t";
+			for (int a = 0; a < stackPointer; a++)
+				cout << charStack[a];
+			cout << endl;
+		}
+		else
+		{
+			currentRule.erase(0, 1);
+			reduceRuleNumber = stoi(currentRule);
+			currentRule = "";
+
+			reduceRule = checkRule(reduceRuleNumber);
+			reduceRuleLength = reduceRule.length();
+
+			for (int i = 0; i < reduceRuleLength; i++)
+			{
+				if (i == 0)
+					LHS = reduceRule[i];
+				
+				if (i >= 3)
+					RHS+=reduceRule[i];
+			}
+
+			RHSLength = RHS.length();
+
+			for (int j = RHSLength; j > 0; j--)
+			{
+				if (isTwoDigits(charStack[(stackPointer - 2)]))
+				{
+					charStack[(stackPointer - 1)] = '\0';
+					stackPointer--;
+					charStack[(stackPointer - 1)] = '\0';
+					stackPointer--;
+				}
+				else
+				{
+					charStack[(stackPointer - 1)] = '\0';
+					stackPointer--;
+				}
+
+				if (RHS[(j - 1)] == charStack[(stackPointer - 1)])
+				{
+					charStack[(stackPointer - 1)] = '\0';
+					stackPointer--;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			charStack[stackPointer] = LHS;
+			stackPointer++;
+
+			newState+=charStack[(stackPointer - 2)];
+			newStateInt = stoi(newState);
+
+			newState = checkTable(newStateInt, charStack[(stackPointer - 1)]);
+
+			newStateLength = newState.length();
+
+			if (newStateLength > 1)
+			{
+				charStack[stackPointer] = newState[0];
+				stackPointer++;
+				charStack[stackPointer] = newState[1];
+				stackPointer++;	
+			}
+			else if (newStateLength == 1)
+			{
+				charStack[stackPointer] = newState[0];
+				stackPointer++;
+			}
+			else
+			{
+				return false;
+			}
+
+			newState = "";
+
+			cout << "The parser has reduced (Rule " << reduceRuleNumber << ": " << reduceRule << ") with new stack content:";
+
+			if (RHSLength > 1)
+				cout << " ";
+			else
+				cout << "\t";
+
+			for (int a = 0; a < stackPointer; a++)
+				cout << charStack[a];
+			cout << endl;
+
+			reduceRule = "";
+			RHS = "";
+			LHS = '\0';
+		}
+	}
+	cout << "Something went wrong." << endl << endl;
+	return false;
+}
