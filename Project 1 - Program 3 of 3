@@ -1,0 +1,329 @@
+//=====================================================================
+//CPSC-323-01 (10289) Compilers and Languages
+//Assignment:     Project 1
+//Program Name:   Prog3
+//Term:           Summer 2022
+//=====================================================================
+
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+// this program allows the user to enter a string of characters, ending with $
+// it will then determine whether each token entered is a number, identifier, 
+// reserved word, arithmetic operator, or special symbol.
+
+// function declarations
+int getUserChoice();
+string getUserString();
+string spaceRemover(string inputString);
+bool checkUserString(string userString);
+void stringParser(string userString);
+bool checkReservedWord(string tokenString);
+bool checkSpecialSymbol(string tokenString);
+bool checkOperator(string tokenString);
+bool checkNumber(string tokenString);
+bool checkIdentifier(string tokenString);
+bool isInt(char testChar);
+bool isLetter(char testChar);
+
+
+//main function
+int main()
+{
+	string userString = "";
+	bool continueLoop = true;
+	string getUserString();
+
+	while (continueLoop)
+	{
+		switch (getUserChoice())
+		{
+		case 1:
+			userString = getUserString();
+
+			cout << endl << "After validation and space removal, your string is:  " << userString << endl << endl;
+			system("pause");
+
+			stringParser(userString);
+			break;
+		case 2:
+			continueLoop = false;
+			break;
+		default:
+			system("cls");
+			cout << "You've made an invalid selection.  Please try again." << endl << endl << endl;
+			system("pause");
+			break;
+		}
+	}
+
+
+	return 0;
+}
+
+
+// function definitions
+int getUserChoice()
+{
+	int userChoice = 0;
+	string userInput = "";
+
+	system("cls");
+	cout << "Project 1: Prog3 - Token Identifier" << endl << endl << endl << endl;
+	cout << "\tPlease make a selection:" << endl << endl;
+	cout << "\t1. Enter a Line to be Tokenized" << endl;
+	cout << "\t2. Exit Program" << endl << endl;
+	cout << "\tYour Selection:      ";
+
+	getline(cin, userInput);
+
+	if ((userInput != "1") && (userInput != "2"))
+		return 0;
+	else
+	{
+		userChoice = stoi(userInput);
+		return userChoice;
+	}
+}
+
+string getUserString()
+{
+	string userString = "";
+	bool inputNotValid = true;
+
+	int sizeOfString = 0;
+	int lastCharAddress = 0;
+
+	do
+	{
+		system("cls");
+		cout << "Please enter a string of tokens to be checked. " << endl;
+		cout << "The only valid regular characters are the numbers 1-9, the uppercase letters A-Z, and the lowercase letters a-z." << endl;
+		cout << "The only valid special characters are +, -, *, /, <, =, ;, (, ), _, a space, and comma (,)." << endl;
+		cout << "Please make sure that each of your tokens is separated by at least one space." << endl << endl << endl;
+		cout << "Your String:  ";
+		getline(cin, userString);
+
+		userString = spaceRemover(userString);
+
+		inputNotValid = !(checkUserString(userString));
+
+		if (inputNotValid)
+		{
+			cout << endl << endl;
+			cout << "The string must be made up of only valid characters." << endl;
+			cout << "Please try again." << endl << endl;
+			system("pause");
+		}
+
+	} while (inputNotValid);
+
+	return userString;
+}
+
+string spaceRemover(string inputString)
+{
+	string outputString = "";
+	int sizeOfString = 0;
+
+	sizeOfString = inputString.length();
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		if (inputString[i] != ' ')
+			outputString.push_back(inputString[i]);
+
+		if (i < (sizeOfString - 1) && (inputString[i] == ' ') && (inputString[(i + 1)] != ' '))
+			outputString.push_back(inputString[i]);
+	}
+
+	return outputString;
+}
+
+bool checkUserString(string userString)
+{
+	const int validCharsQuantity = 75;
+	char validCharacters[validCharsQuantity] = { '+', '-', '*', '/', '<', '>', '=', ';', '(', ')',
+												 ',', '_', '0', '1', '2', '3', '4', '5', '6', '7',
+												 '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+												 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+												 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b',
+												 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+												 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+												 'w', 'x', 'y', 'z', ' ' };
+	int sizeOfString = 0;
+	bool charIsValid = false;
+
+	sizeOfString = userString.length();
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		charIsValid = false;
+
+		for (int j = 0; j < validCharsQuantity; j++)
+		{
+			if (userString[i] == validCharacters[j])
+			{
+				charIsValid = true;
+				break;
+			}
+		}
+
+		if (charIsValid == false)
+			return false;
+	}
+
+	return true;
+}
+
+void stringParser(string userString)
+{
+	string bufferString = "";
+
+	system("cls");
+
+	while (!userString.empty())
+	{
+		while ((userString[0] != ' ') && (!userString.empty()))
+		{
+			bufferString += userString[0];
+			userString.erase(0, 1);
+		}
+
+		if (userString[0] == ' ')
+			userString.erase(0, 1);
+
+		if (checkReservedWord(bufferString))
+			cout << bufferString << "\t\tReserved Word" << endl << endl;
+		else if (checkSpecialSymbol(bufferString))
+			cout << bufferString << "\t\tSpecial Symbol" << endl << endl;
+		else if (checkOperator(bufferString))
+			cout << bufferString << "\t\tOperator" << endl << endl;
+		else if (checkNumber(bufferString))
+			cout << bufferString << "\t\tNumber" << endl << endl;
+		else if (checkIdentifier(bufferString))
+			cout << bufferString << "\t\tIdentifier" << endl << endl;
+		else
+			cout << bufferString << "\t\tNot Identifier" << endl << endl;
+
+		bufferString = "";
+	}
+	system("pause");
+}
+
+bool checkReservedWord(string tokenString)
+{
+	char reservedWords[4][10] = { "cout<<", "for", "int", "while" };
+	string reservedWord = "";
+	string lowerCaseToken = "";
+	int tokenStringLength = 0;
+
+	tokenStringLength = tokenString.length();
+
+	for (int a = 0; a < tokenStringLength; a++)
+	{
+		if ((tokenString[a] >= 65) && (tokenString[a] <= 90))
+			lowerCaseToken += (tokenString[a] + 32);
+		else
+			lowerCaseToken += tokenString[a];
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		reservedWord = reservedWords[i];
+
+		if (lowerCaseToken == reservedWord)
+			return true;
+	}
+
+	return false;
+}
+
+bool checkSpecialSymbol(string tokenString)
+{
+	char specialChars[7][3] = { "<", "=", ";", "(", ")", "<=", "," };
+	string specialChar = "";
+
+	for (int i = 0; i < 7; i++)
+	{
+		specialChar = specialChars[i];
+
+		if (tokenString == specialChar)
+			return true;
+	}
+
+	return false;
+}
+
+bool checkOperator(string tokenString)
+{
+	char operators[6][3] = { "+", "-", "*", "/", "++", "--" };
+
+	string op = "";
+
+	for (int i = 0; i < 6; i++)
+	{
+		op = operators[i];
+
+		if (tokenString == op)
+			return true;
+	}
+
+	return false;
+}
+
+bool checkNumber(string tokenString)
+{
+	int tokenStringLength = 0;
+
+	if (!isInt(tokenString[0]) && !(tokenString[0] == '-'))
+		return false;
+
+	tokenStringLength = tokenString.length();
+
+	for (int i = 1; i < tokenStringLength; i++)
+	{
+		if (!isInt(tokenString[i]))
+			return false;
+	}
+
+	return true;
+}
+
+bool checkIdentifier(string tokenString)
+{
+	int tokenStringLength = 0;
+
+	if (!isLetter(tokenString[0]) && !(tokenString[0] == '_'))
+		return false;
+
+	tokenStringLength = tokenString.length();
+
+	for (int i = 1; i < tokenStringLength; i++)
+	{
+		if (!isLetter(tokenString[i]) && !(isInt(tokenString[i])) && !(tokenString[i] == '_'))
+			return false;
+	}
+
+	return true;
+}
+
+bool isInt(char testChar)
+{
+	if ((testChar >= 48) && (testChar <= 57))
+		return true;
+	else
+		return false;
+}
+
+bool isLetter(char testChar)
+{
+	if ((testChar >= 97) && (testChar <= 122))
+		return true;
+	else if ((testChar >= 65) && (testChar <= 90))
+		return true;
+	else
+		return false;
+}
