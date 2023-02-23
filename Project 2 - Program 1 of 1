@@ -1,0 +1,312 @@
+//=====================================================================
+//CPSC-323-01 (10289) Compilers and Languages
+//Assignment:     Project 2
+//Program Name:   Prog1
+//Term:           Summer 2022
+//=====================================================================
+
+#include <iostream>
+#include <string>
+using namespace std;
+
+// this program allows the user to enter a string of characters, ending with $
+// it will then accept or reject the string based on whether the string is in the 
+// language outlined by the following CFG rules:
+// E -> E+T
+// E -> E- T
+// E -> T
+// T -> T*F
+// T -> T/F
+// T -> F
+// F -> ( E )
+// F -> a
+
+// function declarations
+string getUserString();
+string spaceRemover(string inputString);
+bool checkUserString(string userString);
+bool predictiveParser(string userString);
+bool isNonTerminal(char currentChar);
+int assignRow(char topOfStack);
+int assignCol(char currentChar);
+
+
+
+//main function
+int main()
+{
+	string userString = "";
+
+	userString = getUserString();
+
+	cout << endl << "After validation and space removal, your string is:  " << userString << endl << endl;
+
+	if (predictiveParser(userString))
+		cout << endl << "The string " << userString << " is valid." << endl << endl;
+	else
+		cout << endl << "The string " << userString << " is not valid." << endl << endl;
+
+	system("pause");
+
+	return 0;
+}
+
+// function definitions
+string getUserString()
+{
+	string userString = "";
+	bool inputNotValid = true;
+
+	int sizeOfString = 0;
+	int lastCharAddress = 0;
+
+	do
+	{
+		system("cls");
+		cout << "Please enter a string to be checked. " << endl;
+		cout << "The only valid characters are a, +, -, *, /, (, ), and &." << endl;
+		cout << "Spaces are OK to enter - they will be disregarded." << endl;
+		cout << "Please make sure your string ends with a dollar sign ($)." << endl << endl;
+		cout << "Your String:  ";
+		getline (cin,userString);
+
+		userString = spaceRemover(userString);
+
+		inputNotValid = !(checkUserString(userString));
+
+		if (inputNotValid)
+		{
+			cout << endl << endl;
+			cout << "The last character of the string must be a dollar sign ($)." << endl;
+			cout << "Additionally, the string must be made up of only valid characters." << endl;
+			cout << "Please try again." << endl << endl;
+			system("pause");
+		}
+
+	} while (inputNotValid);
+
+	return userString;
+}
+
+string spaceRemover(string inputString)
+{
+	string outputString = "";
+	int sizeOfString = 0;
+
+	sizeOfString = inputString.length();
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		if (inputString[i] != ' ')
+			outputString.push_back(inputString[i]);
+	}
+
+	return outputString;
+}
+
+bool checkUserString(string userString)
+{
+	const int validCharsQuantity = 8;
+	char validCharacters[validCharsQuantity] = { 'a', '+', '-', '*', '/', '(', ')', '$' };
+	int sizeOfString = 0;
+	bool charIsValid = false;
+	int lastCharAddress = 0;
+	
+	sizeOfString = userString.length();
+	lastCharAddress = (sizeOfString - 1);
+
+	if (userString[lastCharAddress] != '$')
+		return false;
+
+	for (int i = 0; i < sizeOfString; i++)
+	{
+		charIsValid = false;
+
+		for (int j = 0; j < validCharsQuantity; j++)
+		{
+			if (userString[i] == validCharacters[j])
+			{
+				charIsValid = true;
+				break;
+			}
+		}
+
+		if (charIsValid == false)
+			return false;
+	}
+
+	return true;
+}
+
+bool predictiveParser(string userString)
+{
+	const int sizeOfCharStack = 10;
+	const char startingNonTerm = 'E';
+
+	int sizeOfString = 0;
+	string currentRule = "";
+	int currentRuleLength = 0;
+
+	char charStack[sizeOfCharStack] = {};
+	int stackPointer = 0;
+
+	string parsingTable[5][8] = { {"TQ","","","","","TQ","",""},
+								  {"","+TQ","-TQ","","","","0","0"},
+								  {"FR","","","","","FR","",""},
+								  {"","0","0","*FR","/FR","","0","0"},
+								  {"a","","","","","(E)","",""} };
+
+
+	charStack[stackPointer] = '$';
+	stackPointer++;
+	charStack[stackPointer] = startingNonTerm;
+	stackPointer++;
+	
+	sizeOfString = userString.length();
+
+	int loopCount = 0;
+
+	while ((stackPointer > 0) && (loopCount <= 500))
+	{
+		loopCount++;
+
+		if (loopCount == 500)
+		{
+			cout << "Something went wrong." << endl << endl;
+			return false;
+		}
+
+		if ((userString[0] == '$') && (charStack[(stackPointer - 1)] == '$'))
+		{
+			cout << "The stack content when character " << userString[0] << " is matched is:\t";
+			
+			for (int j = 0; j < stackPointer; j++)
+				cout << charStack[j];
+
+			cout << endl;
+
+			return true;
+		}
+		else if (userString[0] == charStack[(stackPointer - 1)])
+		{
+			cout << "The stack content when character " << userString[0] << " is matched is:\t";
+
+			for (int j = 0; j < stackPointer; j++)
+				cout << charStack[j];
+
+			cout << endl;
+
+			userString.erase(0, 1);
+			charStack[(stackPointer - 1)] = '\0';
+			stackPointer--;
+		}
+		else if (!isNonTerminal(charStack[(stackPointer - 1)]))
+		{
+			if (userString[0] != charStack[(stackPointer - 1)])
+				return false;
+		}
+		else if (isNonTerminal(charStack[(stackPointer - 1)]))
+		{
+			if (parsingTable[assignRow(charStack[(stackPointer - 1)])][assignCol(userString[0])] == "")
+				return false;
+			else if (parsingTable[assignRow(charStack[(stackPointer - 1)])][assignCol(userString[0])] == "0")
+			{
+				charStack[(stackPointer - 1)] = '\0';
+				stackPointer--;
+			}
+			else
+			{
+				currentRule = parsingTable[assignRow(charStack[(stackPointer - 1)])][assignCol(userString[0])];
+
+				charStack[(stackPointer - 1)] = '\0';
+				stackPointer--;
+
+				currentRuleLength = currentRule.length();
+
+				for (int i = currentRuleLength; i > 0; i--)
+				{
+					charStack[stackPointer] = (currentRule[(i - 1)]);
+					stackPointer++;
+				}
+			}
+		}
+	}
+}
+
+bool isNonTerminal(char currentChar)
+{
+	const int numberOfNonTerminals = 5;
+
+	char listOfNonTerminals[numberOfNonTerminals] = { 'E', 'Q', 'T', 'R', 'F' };
+
+	for (int i = 0; i < numberOfNonTerminals; i++)
+	{
+		if (currentChar == listOfNonTerminals[i])
+			return true;
+	}
+	return false;
+}
+
+int assignRow(char topOfStack)
+{
+	switch (topOfStack)
+	{
+	case 'E':
+		return 0;
+		break;
+
+	case 'Q':
+		return 1;
+		break;
+
+	case 'T':
+		return 2;
+		break;
+
+	case 'R':
+		return 3;
+		break;
+
+	case 'F':
+		return 4;
+		break;
+	}
+}
+
+int assignCol(char currentChar)
+{
+	switch (currentChar)
+	{
+	case 'a':
+		return 0;
+		break;
+
+	case '+':
+		return 1;
+		break;
+
+	case '-':
+		return 2;
+		break;
+
+	case '*':
+		return 3;
+		break;
+
+	case '/':
+		return 4;
+		break;
+
+	case '(':
+		return 5;
+		break;
+
+	case ')':
+		return 6;
+		break;
+
+	case '$':
+		return 7;
+		break;
+	}
+}
